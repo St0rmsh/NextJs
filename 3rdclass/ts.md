@@ -1,0 +1,1 @@
+typescript is the static type superset of JavaScript
