@@ -22,7 +22,7 @@ export default function LoginPage() {
     // Simulate login
     setTimeout(() => {
       setIsLoading(false);
-      router.push("/");
+      router.push("/builder");
     }, 1500);
   };
 

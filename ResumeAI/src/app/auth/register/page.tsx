@@ -99,7 +99,7 @@ export default function RegisterPage() {
         throw new Error(result.message || "Something went wrong");
       }
 
-      router.push("/");
+      router.push("/builder");
     } catch (error: any) {
       setApiError(error.message);
     } finally {
