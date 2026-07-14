@@ -1,13 +1,14 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { Moon, Sun, Download, Search, CheckCircle2 } from "lucide-react";
+import { Moon, Sun, Search, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useResumeStore } from "@/lib/store/useResumeStore";
+import { DownloadMenu } from "@/components/builder/DownloadMenu";
 
 export function BuilderHeader() {
   const { theme, setTheme } = useTheme();
-  const { completionPercentage } = useResumeStore();
+  const { completionPercentage, setActiveStep } = useResumeStore();
 
   return (
     <header className="sticky top-0 z-50 flex h-16 w-full items-center justify-between border-b border-zinc-200 bg-white/80 px-6 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/80">
@@ -38,16 +39,17 @@ export function BuilderHeader() {
           <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-zinc-400" />
           <span className="sr-only">Toggle theme</span>
         </Button>
-        
-        <Button variant="outline" className="hidden sm:flex">
+
+        <Button
+          variant="outline"
+          className="hidden sm:flex"
+          onClick={() => setActiveStep(8)}
+        >
           <Search className="mr-2 h-4 w-4" />
           Analyze ATS
         </Button>
 
-        <Button>
-          <Download className="mr-2 h-4 w-4" />
-          Export PDF
-        </Button>
+        <DownloadMenu />
       </div>
     </header>
   );

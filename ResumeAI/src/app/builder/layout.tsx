@@ -22,7 +22,8 @@ export default function BuilderLayout({
         </main>
         
         {/* Right Panel - Preview */}
-        <aside className="hidden xl:block w-[45%] bg-zinc-100 dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800">
+        <aside  id="resume-print-container"
+         className="hidden xl:block w-[45%] bg-zinc-100 dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800">
           <ResumePreview />
         </aside>
       </div>

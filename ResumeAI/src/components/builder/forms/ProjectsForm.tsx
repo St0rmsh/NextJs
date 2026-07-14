@@ -24,42 +24,40 @@ export function ProjectsForm() {
   };
 
   const generateDescription = async (projId: string) => {
-    const proj = data.projects.find(p => p.id === projId);
-    if (!proj || !proj.name) {
-      alert("Please enter a project name first.");
-      return;
-    }
+  const proj = data.projects.find(p => p.id === projId);
+  if (!proj || !proj.name) {
+    alert("Please enter a project name first.");
+    return;
+  }
 
-    setGeneratingId(projId);
-    try {
-      // Mocking project description generation since we don't have a specific endpoint yet
-      // using the summary endpoint as a fallback or simulating it
-      const response = await fetch("/api/ai/genearte-summary", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jobTitle: `Developer for ${proj.name}`,
-          experienceLevel: "Mid Level",
-          skills: proj.techStack.length > 0 ? proj.techStack : data.skills,
-        }),
+  setGeneratingId(projId);
+  try {
+    const response = await fetch("/api/ai/generate-project-description", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jobTitle: data.personalInfo.title || "Software Engineer",
+        experienceLevel: "Mid Level",
+        techStack: proj.techStack.length > 0 ? proj.techStack : data.skills,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.success && result.data?.projectDescription?.descriptions) {
+      updateProject(projId, {
+        description: result.data.projectDescription.descriptions,
       });
-
-      const result = await response.json();
-      
-      if (result.success && result.data?.summary?.summary) {
-        updateProject(projId, { 
-          description: [result.data.summary.summary] // API returns a paragraph, we put it in array
-        });
-      } else {
-        alert("Failed to generate description. Please try again.");
-      }
-    } catch (error) {
-      console.error(error);
-      alert("An error occurred while generating.");
-    } finally {
-      setGeneratingId(null);
+    } else {
+      alert("Failed to generate description. Please try again.");
     }
-  };
+  } catch (error) {
+    console.error(error);
+    alert("An error occurred while generating.");
+  } finally {
+    setGeneratingId(null);
+  }
+};
 
   return (
     <div className="space-y-6 pb-20">
