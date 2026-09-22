@@ -57,6 +57,219 @@ interface ContactItem {
 }
 
 /* =====================================================
+   URL NORMALIZATION
+   ===================================================== */
+
+/**
+ * Converts user-entered URL values into a valid URL.
+ *
+ * Handles:
+ * - https://example.com
+ * - http://example.com
+ * - www.example.com
+ * - example.com
+ * - https//example.com
+ * - http//example.com
+ * - //example.com
+ * - Markdown links: [Example](https://example.com)
+ * - Markdown links with malformed spacing
+ * - surrounding quotes/brackets
+ * - %20 artifacts
+ *
+ * Returns an empty string when the URL cannot be validated.
+ */
+function normalizeUrl(value: string): string {
+  if (!value) {
+    return "";
+  }
+
+  let url = String(value).trim();
+
+  if (!url) {
+    return "";
+  }
+
+  /* ---------------------------------------------------
+     Remove common encoded whitespace artifacts
+     --------------------------------------------------- */
+
+  url = url.replace(/%20/gi, " ");
+
+  /* ---------------------------------------------------
+     Decode simple surrounding URL encoding
+     --------------------------------------------------- */
+
+  try {
+    url = decodeURIComponent(url);
+  } catch {
+    // Keep original value if it is not valid URI encoding.
+  }
+
+  url = url.trim();
+
+  /* ---------------------------------------------------
+     Extract URL from Markdown format
+     
+     [Zentro](https://zentro-pwp3.onrender.com)
+     --------------------------------------------------- */
+
+  const markdownMatch = url.match(
+    /\[[^\]]*\]\(\s*(https?:\/\/[^)\s]+)\s*\)/i
+  );
+
+  if (markdownMatch?.[1]) {
+    url = markdownMatch[1];
+  }
+
+  /* ---------------------------------------------------
+     Handle malformed Markdown-like values.
+
+     Example:
+     ["%20https](https://"%20https//zentro-pwp3.onrender.com)
+
+     Try to locate the actual URL portion.
+     --------------------------------------------------- */
+
+  if (
+    url.includes("](") ||
+    url.includes("](https") ||
+    url.includes("](")
+  ) {
+    const embeddedUrl = url.match(
+      /(https?:\/\/[^\s)\]"']+)/i
+    );
+
+    if (embeddedUrl?.[1]) {
+      url = embeddedUrl[1];
+    }
+  }
+
+  /* ---------------------------------------------------
+     If multiple URL-like pieces exist, prefer the
+     first actual HTTP/HTTPS URL.
+     --------------------------------------------------- */
+
+  const explicitProtocolMatch = url.match(
+    /(https?:\/\/[^\s)\]"'<>]+)/i
+  );
+
+  if (explicitProtocolMatch?.[1]) {
+    url = explicitProtocolMatch[1];
+  }
+
+  /* ---------------------------------------------------
+     Remove surrounding characters
+     --------------------------------------------------- */
+
+  url = url
+    .trim()
+    .replace(/^[\s"'`<\[\]()]+/, "")
+    .replace(/[\s"'`>\[\]()]+$/, "")
+    .trim();
+
+  /* ---------------------------------------------------
+     Remove accidental encoded whitespace again
+     --------------------------------------------------- */
+
+  url = url.replace(/%20/gi, "");
+
+  /* ---------------------------------------------------
+     Fix malformed protocol:
+     
+     https//example.com
+     http//example.com
+     --------------------------------------------------- */
+
+  if (/^https\/\//i.test(url)) {
+    url = `https://${url.slice("https//".length)}`;
+  }
+
+  if (/^http\/\//i.test(url)) {
+    url = `http://${url.slice("http//".length)}`;
+  }
+
+  /* ---------------------------------------------------
+     Fix protocol with accidental spaces:
+     
+     https: //example.com
+     https ://example.com
+     --------------------------------------------------- */
+
+  url = url.replace(
+    /^https?\s*:\s*\/\//i,
+    (match) =>
+      match.toLowerCase().startsWith("https")
+        ? "https://"
+        : "http://"
+  );
+
+  /* ---------------------------------------------------
+     Handle protocol-relative URLs:
+     
+     //example.com
+     --------------------------------------------------- */
+
+  if (url.startsWith("//")) {
+    url = `https:${url}`;
+  }
+
+  /* ---------------------------------------------------
+     Handle www.example.com
+     --------------------------------------------------- */
+
+  if (/^www\./i.test(url)) {
+    url = `https://${url}`;
+  }
+
+  /* ---------------------------------------------------
+     Add HTTPS to bare domains
+     
+     zentro-pwp3.onrender.com
+     github.com/St0rmsh/Zentro
+     --------------------------------------------------- */
+
+  if (
+    !/^https?:\/\//i.test(url) &&
+    !/^mailto:/i.test(url) &&
+    !/^tel:/i.test(url)
+  ) {
+    url = `https://${url}`;
+  }
+
+  url = url.trim();
+
+  /* ---------------------------------------------------
+     Validate the final URL
+     --------------------------------------------------- */
+
+  try {
+    if (
+      /^mailto:/i.test(url) ||
+      /^tel:/i.test(url)
+    ) {
+      return url;
+    }
+
+    const parsed = new URL(url);
+
+    if (
+      parsed.protocol !== "http:" &&
+      parsed.protocol !== "https:"
+    ) {
+      return "";
+    }
+
+    if (!parsed.hostname) {
+      return "";
+    }
+
+    return parsed.toString();
+  } catch {
+    return "";
+  }
+}
+
+/* =====================================================
    MAIN RENDERER
    ===================================================== */
 
@@ -99,8 +312,7 @@ async function renderResumeAtScale(
      SCALE
      =================================================== */
 
-  const S = (value: number) =>
-    value * scale;
+  const S = (value: number) => value * scale;
 
   const margin = Math.max(
     42,
@@ -119,9 +331,7 @@ async function renderResumeAtScale(
       PAGE_WIDTH,
       PAGE_HEIGHT,
     ]),
-    y:
-      PAGE_HEIGHT -
-      S(TOP_MARGIN),
+    y: PAGE_HEIGHT - S(TOP_MARGIN),
   };
 
   /* ===================================================
@@ -135,16 +345,12 @@ async function renderResumeAtScale(
     ]);
 
     cursor.y =
-      PAGE_HEIGHT -
-      S(TOP_MARGIN);
+      PAGE_HEIGHT - S(TOP_MARGIN);
   }
 
-  function ensureSpace(
-    requiredHeight: number
-  ) {
+  function ensureSpace(requiredHeight: number) {
     if (
-      cursor.y -
-        requiredHeight <
+      cursor.y - requiredHeight <
       S(BOTTOM_MARGIN)
     ) {
       createPage();
@@ -173,10 +379,7 @@ async function renderResumeAtScale(
 
     return (
       base +
-      Math.max(
-        0,
-        text.length - 1
-      ) *
+      Math.max(0, text.length - 1) *
         characterSpacing
     );
   }
@@ -200,9 +403,7 @@ async function renderResumeAtScale(
       return [];
     }
 
-    const words =
-      cleaned.split(" ");
-
+    const words = cleaned.split(" ");
     const lines: string[] = [];
 
     let current = "";
@@ -228,10 +429,6 @@ async function renderResumeAtScale(
         lines.push(current);
       }
 
-      /*
-       * Long word / URL protection.
-       */
-
       if (
         widthOf(
           word,
@@ -243,8 +440,7 @@ async function renderResumeAtScale(
         let chunk = "";
 
         for (const char of word) {
-          const test =
-            chunk + char;
+          const test = chunk + char;
 
           if (
             widthOf(
@@ -304,25 +500,20 @@ async function renderResumeAtScale(
       options?.after ?? 0;
 
     ensureSpace(
-      lineHeight +
-        S(after)
+      lineHeight + S(after)
     );
 
-    cursor.page.drawText(
-      text,
-      {
-        x,
-        y: cursor.y,
-        size,
-        font: useFont,
-        color,
-        characterSpacing,
-      }
-    );
+    cursor.page.drawText(text, {
+      x,
+      y: cursor.y,
+      size,
+      font: useFont,
+      color,
+      characterSpacing,
+    });
 
     cursor.y -=
-      lineHeight +
-      S(after);
+      lineHeight + S(after);
   }
 
   /* ===================================================
@@ -352,29 +543,25 @@ async function renderResumeAtScale(
     const characterSpacing =
       options?.characterSpacing ?? 0;
 
-    const lines =
-      wrapText(
-        text,
-        maxWidth,
-        useFont,
-        size,
-        characterSpacing
-      );
+    const lines = wrapText(
+      text,
+      maxWidth,
+      useFont,
+      size,
+      characterSpacing
+    );
 
     for (const line of lines) {
       ensureSpace(lineHeight);
 
-      cursor.page.drawText(
-        line,
-        {
-          x,
-          y: cursor.y,
-          size,
-          font: useFont,
-          color,
-          characterSpacing,
-        }
-      );
+      cursor.page.drawText(line, {
+        x,
+        y: cursor.y,
+        size,
+        font: useFont,
+        color,
+        characterSpacing,
+      });
 
       cursor.y -= lineHeight;
     }
@@ -391,11 +578,9 @@ async function renderResumeAtScale(
     x: number,
     size: number
   ) {
-    const bulletRadius =
-      S(1.7);
+    const bulletRadius = S(1.7);
 
-    const textX =
-      x + S(12);
+    const textX = x + S(12);
 
     const maxWidth =
       PAGE_WIDTH -
@@ -405,21 +590,19 @@ async function renderResumeAtScale(
     const lineHeight =
       size * 1.32;
 
-    const lines =
-      wrapText(
-        text,
-        maxWidth,
-        font,
-        size
-      );
+    const lines = wrapText(
+      text,
+      maxWidth,
+      font,
+      size
+    );
 
     if (!lines.length) {
       return;
     }
 
     ensureSpace(
-      lines.length *
-        lineHeight +
+      lines.length * lineHeight +
         S(3)
     );
 
@@ -470,6 +653,13 @@ async function renderResumeAtScale(
     ],
     url: string
   ) {
+    const normalized =
+      normalizeUrl(url);
+
+    if (!normalized) {
+      return;
+    }
+
     const annotation =
       pdfDoc.context.register(
         pdfDoc.context.obj({
@@ -480,7 +670,9 @@ async function renderResumeAtScale(
           A: {
             Type: "Action",
             S: "URI",
-            URI: PDFString.of(url),
+            URI: PDFString.of(
+              normalized
+            ),
           },
         })
       );
@@ -504,34 +696,6 @@ async function renderResumeAtScale(
   }
 
   /* ===================================================
-     URL NORMALIZATION
-     =================================================== */
-
-  function normalizeUrl(
-    value: string
-  ): string {
-    const trimmed =
-      value.trim();
-
-    if (!trimmed) {
-      return "";
-    }
-
-    if (
-      /^https?:\/\//i.test(
-        trimmed
-      ) ||
-      /^mailto:/i.test(
-        trimmed
-      )
-    ) {
-      return trimmed;
-    }
-
-    return `https://${trimmed}`;
-  }
-
-  /* ===================================================
      DRAW LINK
      =================================================== */
 
@@ -543,23 +707,26 @@ async function renderResumeAtScale(
     size: number,
     useFont: PDFFont = font
   ): number {
-    const textWidth =
-      widthOf(
-        text,
-        useFont,
-        size
-      );
+    const normalizedUrl =
+      normalizeUrl(url);
 
-    cursor.page.drawText(
+    if (!normalizedUrl) {
+      return 0;
+    }
+
+    const textWidth = widthOf(
       text,
-      {
-        x,
-        y,
-        size,
-        font: useFont,
-        color: COLOR.link,
-      }
+      useFont,
+      size
     );
+
+    cursor.page.drawText(text, {
+      x,
+      y,
+      size,
+      font: useFont,
+      color: COLOR.link,
+    });
 
     cursor.page.drawLine({
       start: {
@@ -567,9 +734,7 @@ async function renderResumeAtScale(
         y: y - S(1.4),
       },
       end: {
-        x:
-          x +
-          textWidth,
+        x: x + textWidth,
         y: y - S(1.4),
       },
       thickness: S(0.45),
@@ -584,7 +749,7 @@ async function renderResumeAtScale(
         x + textWidth,
         y + size + S(2),
       ],
-      url
+      normalizedUrl
     );
 
     return textWidth;
@@ -620,17 +785,16 @@ async function renderResumeAtScale(
      =================================================== */
 
   function drawSectionHeading(
-    title: string
+    sectionTitle: string
   ) {
     cursor.y -= S(9);
 
     ensureSpace(S(28));
 
-    const size =
-      S(10.5);
+    const size = S(10.5);
 
     const upperTitle =
-      title.toUpperCase();
+      sectionTitle.toUpperCase();
 
     cursor.page.drawText(
       upperTitle,
@@ -646,13 +810,12 @@ async function renderResumeAtScale(
       }
     );
 
-    const titleWidth =
-      widthOf(
-        upperTitle,
-        fontBold,
-        size,
-        S(0.55)
-      );
+    const titleWidth = widthOf(
+      upperTitle,
+      fontBold,
+      size,
+      S(0.55)
+    );
 
     drawRule(
       cursor.y + S(3),
@@ -660,9 +823,7 @@ async function renderResumeAtScale(
     );
 
     cursor.page.drawRectangle({
-      x:
-        margin -
-        S(2),
+      x: margin - S(2),
       y:
         cursor.y -
         S(2),
@@ -722,60 +883,46 @@ async function renderResumeAtScale(
 
   ensureSpace(S(90));
 
-  /* ---------------------------------------------------
-     NAME
-     --------------------------------------------------- */
+  const nameSize = S(24);
 
-  const nameSize =
-    S(24);
-
-  const nameWidth =
-    widthOf(
-      name,
-      fontBold,
-      nameSize,
-      S(0.1)
-    );
+  const nameWidth = widthOf(
+    name,
+    fontBold,
+    nameSize,
+    S(0.1)
+  );
 
   const nameX =
-    (PAGE_WIDTH -
-      nameWidth) /
+    (PAGE_WIDTH - nameWidth) /
     2;
 
-  cursor.page.drawText(
-    name,
-    {
-      x: nameX,
-      y: cursor.y,
-      size: nameSize,
-      font: fontBold,
-      color: COLOR.text,
-      characterSpacing:
-        S(0.1),
-    }
-  );
+  cursor.page.drawText(name, {
+    x: nameX,
+    y: cursor.y,
+    size: nameSize,
+    font: fontBold,
+    color: COLOR.text,
+    characterSpacing: S(0.1),
+  });
 
   cursor.y -= S(29);
 
-  /* ---------------------------------------------------
+  /* ===================================================
      TITLE
-     --------------------------------------------------- */
+     =================================================== */
 
   if (title) {
-    const titleSize =
-      S(10.5);
+    const titleSize = S(10.5);
 
-    const titleWidth =
-      widthOf(
-        title,
-        fontItalic,
-        titleSize,
-        S(0.05)
-      );
+    const titleWidth = widthOf(
+      title,
+      fontItalic,
+      titleSize,
+      S(0.05)
+    );
 
     const titleX =
-      (PAGE_WIDTH -
-        titleWidth) /
+      (PAGE_WIDTH - titleWidth) /
       2;
 
     cursor.page.drawText(
@@ -798,37 +945,25 @@ async function renderResumeAtScale(
      CONTACT INFORMATION
      =================================================== */
 
-  const contacts: ContactItem[] =
-    [];
+  const contacts: ContactItem[] = [];
 
-  if (
-    personalInfo.email?.trim()
-  ) {
+  if (personalInfo.email?.trim()) {
     contacts.push({
-      text:
-        personalInfo.email.trim(),
-      url:
-        `mailto:${personalInfo.email.trim()}`,
+      text: personalInfo.email.trim(),
+      url: `mailto:${personalInfo.email.trim()}`,
     });
   }
 
-  if (
-    personalInfo.phone?.trim()
-  ) {
+  if (personalInfo.phone?.trim()) {
     contacts.push({
-      text:
-        personalInfo.phone.trim(),
-      url:
-        `tel:${personalInfo.phone.trim()}`,
+      text: personalInfo.phone.trim(),
+      url: `tel:${personalInfo.phone.trim()}`,
     });
   }
 
-  if (
-    personalInfo.location?.trim()
-  ) {
+  if (personalInfo.location?.trim()) {
     contacts.push({
-      text:
-        personalInfo.location.trim(),
+      text: personalInfo.location.trim(),
     });
   }
 
@@ -836,40 +971,46 @@ async function renderResumeAtScale(
      SOCIAL LINKS
      =================================================== */
 
-  if (
-    personalInfo.linkedin?.trim()
-  ) {
-    contacts.push({
-      text: "LinkedIn",
-      url:
-        normalizeUrl(
-          personalInfo.linkedin.trim()
-        ),
-    });
+  if (personalInfo.linkedin?.trim()) {
+    const linkedin =
+      normalizeUrl(
+        personalInfo.linkedin.trim()
+      );
+
+    if (linkedin) {
+      contacts.push({
+        text: "LinkedIn",
+        url: linkedin,
+      });
+    }
   }
 
-  if (
-    personalInfo.github?.trim()
-  ) {
-    contacts.push({
-      text: "GitHub",
-      url:
-        normalizeUrl(
-          personalInfo.github.trim()
-        ),
-    });
+  if (personalInfo.github?.trim()) {
+    const github =
+      normalizeUrl(
+        personalInfo.github.trim()
+      );
+
+    if (github) {
+      contacts.push({
+        text: "GitHub",
+        url: github,
+      });
+    }
   }
 
-  if (
-    personalInfo.portfolio?.trim()
-  ) {
-    contacts.push({
-      text: "Portfolio",
-      url:
-        normalizeUrl(
-          personalInfo.portfolio.trim()
-        ),
-    });
+  if (personalInfo.portfolio?.trim()) {
+    const portfolio =
+      normalizeUrl(
+        personalInfo.portfolio.trim()
+      );
+
+    if (portfolio) {
+      contacts.push({
+        text: "Portfolio",
+        url: portfolio,
+      });
+    }
   }
 
   /* ===================================================
@@ -877,8 +1018,7 @@ async function renderResumeAtScale(
      =================================================== */
 
   if (contacts.length) {
-    const contactSize =
-      S(8.8);
+    const contactSize = S(8.8);
 
     const separator =
       "   •   ";
@@ -893,11 +1033,6 @@ async function renderResumeAtScale(
     const availableWidth =
       PAGE_WIDTH -
       margin * 2;
-
-    /*
-     * Build centered rows based
-     * on actual text width.
-     */
 
     const rows: ContactItem[][] =
       [];
@@ -931,25 +1066,19 @@ async function renderResumeAtScale(
           currentRow
         );
 
-        currentRow = [
-          item,
-        ];
+        currentRow = [item];
 
         currentWidth =
           itemWidth;
       } else {
-        currentRow.push(
-          item
-        );
+        currentRow.push(item);
 
         currentWidth +=
           additionalWidth;
       }
     }
 
-    if (
-      currentRow.length
-    ) {
+    if (currentRow.length) {
       rows.push(
         currentRow
       );
@@ -960,11 +1089,12 @@ async function renderResumeAtScale(
 
       row.forEach(
         (item, index) => {
-          rowWidth += widthOf(
-            item.text,
-            font,
-            contactSize
-          );
+          rowWidth +=
+            widthOf(
+              item.text,
+              font,
+              contactSize
+            );
 
           if (
             index <
@@ -1007,7 +1137,8 @@ async function renderResumeAtScale(
               {
                 x,
                 y: lineY,
-                size: contactSize,
+                size:
+                  contactSize,
                 font,
                 color:
                   COLOR.text,
@@ -1062,12 +1193,8 @@ async function renderResumeAtScale(
      SUMMARY
      =================================================== */
 
-  if (
-    data.summary?.trim()
-  ) {
-    drawSectionHeading(
-      "Summary"
-    );
+  if (data.summary?.trim()) {
+    drawSectionHeading("Summary");
 
     drawParagraph(
       data.summary.trim(),
@@ -1077,11 +1204,9 @@ async function renderResumeAtScale(
       contentWidth,
       COLOR.text,
       {
-        lineHeight:
-          S(13.2),
+        lineHeight: S(13.2),
         after: 2,
-        characterSpacing:
-          S(0.02),
+        characterSpacing: S(0.02),
       }
     );
   }
@@ -1094,8 +1219,7 @@ async function renderResumeAtScale(
     (data.skills || [])
       .filter(
         (skill) =>
-          typeof skill ===
-            "string" &&
+          typeof skill === "string" &&
           skill.trim()
       )
       .map(
@@ -1106,28 +1230,12 @@ async function renderResumeAtScale(
   const groupedSkills =
     groupSkills(rawSkills);
 
-  if (
-    groupedSkills.length
-  ) {
-    drawSectionHeading(
-      "Skills"
-    );
+  if (groupedSkills.length) {
+    drawSectionHeading("Skills");
 
-    /*
-     * Category label width.
-     *
-     * Example:
-     *
-     * LANGUAGES       JavaScript • TypeScript
-     * FRONTEND        React • Next.js • Redux Toolkit
-     * BACKEND         Node.js • Express.js
-     */
+    const labelWidth = S(88);
 
-    const labelWidth =
-      S(88);
-
-    const skillGap =
-      S(9);
+    const skillGap = S(9);
 
     const skillX =
       margin +
@@ -1139,14 +1247,11 @@ async function renderResumeAtScale(
       margin -
       skillX;
 
-    const labelSize =
-      S(8.5);
+    const labelSize = S(8.5);
 
-    const skillSize =
-      S(9.1);
+    const skillSize = S(9.1);
 
-    const lineHeight =
-      S(12.2);
+    const lineHeight = S(12.2);
 
     for (const group of groupedSkills) {
       const skillText =
@@ -1154,14 +1259,13 @@ async function renderResumeAtScale(
           "  •  "
         );
 
-      const lines =
-        wrapText(
-          skillText,
-          skillWidth,
-          font,
-          skillSize,
-          S(0.01)
-        );
+      const lines = wrapText(
+        skillText,
+        skillWidth,
+        font,
+        skillSize,
+        S(0.01)
+      );
 
       if (!lines.length) {
         continue;
@@ -1172,10 +1276,6 @@ async function renderResumeAtScale(
           lineHeight +
           S(4)
       );
-
-      /*
-       * Category label.
-       */
 
       cursor.page.drawText(
         group.label.toUpperCase(),
@@ -1189,10 +1289,6 @@ async function renderResumeAtScale(
             S(0.35),
         }
       );
-
-      /*
-       * Skills.
-       */
 
       for (
         let index = 0;
@@ -1240,9 +1336,7 @@ async function renderResumeAtScale(
       "Experience"
     );
 
-    for (
-      const experience of experiences
-    ) {
+    for (const experience of experiences) {
       const role =
         experience.role?.trim() ||
         "Role";
@@ -1290,7 +1384,8 @@ async function renderResumeAtScale(
           y: cursor.y,
           size: S(10.8),
           font,
-          color: COLOR.muted,
+          color:
+            COLOR.muted,
         }
       );
 
@@ -1312,7 +1407,8 @@ async function renderResumeAtScale(
             y: cursor.y,
             size: S(8.5),
             font: fontItalic,
-            color: COLOR.muted,
+            color:
+              COLOR.muted,
           }
         );
       }
@@ -1355,17 +1451,23 @@ async function renderResumeAtScale(
       "Projects"
     );
 
-    for (
-      const project of projects
-    ) {
+    for (const project of projects) {
       const projectName =
         project.name.trim();
 
+      /*
+       * Normalize project URLs BEFORE
+       * using them anywhere in the PDF.
+       */
       const liveUrl =
-        project.url?.trim();
+        normalizeUrl(
+          project.url || ""
+        );
 
       const githubUrl =
-        project.githubUrl?.trim();
+        normalizeUrl(
+          project.githubUrl || ""
+        );
 
       ensureSpace(S(40));
 
@@ -1393,16 +1495,13 @@ async function renderResumeAtScale(
         ) +
         S(12);
 
-      const linkSize =
-        S(8.4);
+      const linkSize = S(8.4);
 
       if (liveUrl) {
         const liveWidth =
           drawLink(
             "Live Demo",
-            normalizeUrl(
-              liveUrl
-            ),
+            liveUrl,
             linkX,
             cursor.y,
             linkSize
@@ -1441,9 +1540,7 @@ async function renderResumeAtScale(
       if (githubUrl) {
         drawLink(
           "GitHub",
-          normalizeUrl(
-            githubUrl
-          ),
+          githubUrl,
           linkX,
           cursor.y,
           linkSize
@@ -1455,7 +1552,10 @@ async function renderResumeAtScale(
       /* TECH STACK */
 
       const technologies =
-        (project.techStack || [])
+        (
+          project.techStack ||
+          []
+        )
           .filter(
             (technology) =>
               technology?.trim()
@@ -1465,9 +1565,7 @@ async function renderResumeAtScale(
               technology.trim()
           );
 
-      if (
-        technologies.length
-      ) {
+      if (technologies.length) {
         drawParagraph(
           technologies.join(
             "  •  "
@@ -1527,7 +1625,8 @@ async function renderResumeAtScale(
     );
 
     for (
-      const educationItem of education
+      const educationItem of
+        education
     ) {
       const degree =
         educationItem.degree?.trim() ||
@@ -1564,13 +1663,12 @@ async function renderResumeAtScale(
 
       cursor.y -= S(14);
 
-      const secondLine =
-        [
-          institution,
-          dates,
-        ]
-          .filter(Boolean)
-          .join("  •  ");
+      const secondLine = [
+        institution,
+        dates,
+      ]
+        .filter(Boolean)
+        .join("  •  ");
 
       if (secondLine) {
         drawText(
@@ -1580,8 +1678,7 @@ async function renderResumeAtScale(
           font,
           COLOR.muted,
           {
-            lineHeight:
-              S(12),
+            lineHeight: S(12),
             after: 3,
           }
         );
@@ -1597,8 +1694,7 @@ async function renderResumeAtScale(
           font,
           COLOR.text,
           {
-            lineHeight:
-              S(12),
+            lineHeight: S(12),
             after: 4,
           }
         );
@@ -1619,15 +1715,14 @@ async function renderResumeAtScale(
           certification.name?.trim()
       );
 
-  if (
-    certifications.length
-  ) {
+  if (certifications.length) {
     drawSectionHeading(
       "Certifications"
     );
 
     for (
-      const certification of certifications
+      const certification of
+        certifications
     ) {
       const parts = [
         certification.name,
@@ -1652,7 +1747,9 @@ async function renderResumeAtScale(
         );
 
       const url =
-        certification.url?.trim();
+        normalizeUrl(
+          certification.url || ""
+        );
 
       if (!url) {
         drawBullet(
@@ -1684,9 +1781,7 @@ async function renderResumeAtScale(
           S(9.1)
         );
 
-      if (
-        !labelLines.length
-      ) {
+      if (!labelLines.length) {
         continue;
       }
 
@@ -1701,17 +1796,15 @@ async function renderResumeAtScale(
         i++
       ) {
         if (i === 0) {
-          cursor.page.drawCircle(
-            {
-              x: bulletX,
-              y:
-                cursor.y +
-                S(3),
-              size: S(1.7),
-              color:
-                COLOR.bullet,
-            }
-          );
+          cursor.page.drawCircle({
+            x: bulletX,
+            y:
+              cursor.y +
+              S(3),
+            size: S(1.7),
+            color:
+              COLOR.bullet,
+          });
         }
 
         cursor.page.drawText(
@@ -1745,7 +1838,7 @@ async function renderResumeAtScale(
 
       drawLink(
         "(link)",
-        normalizeUrl(url),
+        url,
         textX +
           lastLineWidth +
           S(5),
@@ -1756,10 +1849,6 @@ async function renderResumeAtScale(
       cursor.y -= S(15);
     }
   }
-
-  /*
-   * No footer.
-   */
 
   return pdfDoc;
 }
@@ -1791,7 +1880,7 @@ export async function generateResumePDF(
     let scale =
       1 - SCALE_STEP;
     scale >=
-      MIN_SCALE - 0.001;
+    MIN_SCALE - 0.001;
     scale -= SCALE_STEP
   ) {
     const currentDocument =

@@ -1,6 +1,8 @@
 "use client";
 
+import { useMemo } from "react";
 import { useResumeStore } from "@/lib/store/useResumeStore";
+import { groupSkills } from "@/lib/resume/skillCategories";
 
 function normalizeUrl(url?: string): string {
   if (!url?.trim()) {
@@ -16,7 +18,11 @@ function normalizeUrl(url?: string): string {
   return `https://${value}`;
 }
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
+function SectionTitle({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <h2 className="mb-2 border-b border-zinc-300 pb-1 text-[12.5px] font-bold uppercase tracking-[0.12em] text-zinc-800">
       {children}
@@ -29,9 +35,9 @@ export default function ResumePreview() {
 
   const personalInfo = data.personalInfo;
 
-  // =========================================================
-  // FILTER EMPTY DATA
-  // =========================================================
+  /* =========================================================
+     FILTER EMPTY DATA
+     ========================================================= */
 
   const validExperience =
     data.experience?.filter(
@@ -41,7 +47,9 @@ export default function ResumePreview() {
         Boolean(experience.startDate?.trim()) ||
         Boolean(experience.endDate?.trim()) ||
         Boolean(
-          experience.description?.some((point) => point?.trim())
+          experience.description?.some(
+            (point) => point?.trim()
+          )
         )
     ) || [];
 
@@ -62,10 +70,14 @@ export default function ResumePreview() {
         Boolean(project.name?.trim()) ||
         Boolean(project.url?.trim()) ||
         Boolean(
-          project.techStack?.some((technology) => technology?.trim())
+          project.techStack?.some(
+            (technology) => technology?.trim()
+          )
         ) ||
         Boolean(
-          project.description?.some((point) => point?.trim())
+          project.description?.some(
+            (point) => point?.trim()
+          )
         )
     ) || [];
 
@@ -79,11 +91,22 @@ export default function ResumePreview() {
     ) || [];
 
   const validSkills =
-    data.skills?.filter((skill) => skill?.trim()) || [];
+    data.skills?.filter(
+      (skill) => skill?.trim()
+    ) || [];
 
-  // =========================================================
-  // CHECK WHETHER RESUME HAS ANY CONTENT
-  // =========================================================
+  /* =========================================================
+     GROUP SKILLS
+     ========================================================= */
+
+  const groupedSkills = useMemo(
+    () => groupSkills(validSkills),
+    [data.skills]
+  );
+
+  /* =========================================================
+     CHECK WHETHER RESUME HAS ANY CONTENT
+     ========================================================= */
 
   const hasAnyContent =
     Boolean(personalInfo?.fullName?.trim()) ||
@@ -101,6 +124,10 @@ export default function ResumePreview() {
     validEducation.length > 0 ||
     validCertifications.length > 0;
 
+  /* =========================================================
+     EMPTY PREVIEW
+     ========================================================= */
+
   if (!hasAnyContent) {
     return (
       <div
@@ -116,6 +143,10 @@ export default function ResumePreview() {
     );
   }
 
+  /* =========================================================
+     RESUME
+     ========================================================= */
+
   return (
     <div
       id="resume-print-container"
@@ -125,22 +156,23 @@ export default function ResumePreview() {
         id="resume-print-area"
         className="mx-auto w-full max-w-[794px] shrink-0 bg-white text-zinc-900 shadow-[0_10px_40px_rgba(0,0,0,0.12)]"
       >
-        {/* ===================================================== */}
-        {/* A4 RESUME */}
-        {/* ===================================================== */}
-
         <div className="box-border px-8 py-7 sm:px-9 sm:py-8">
 
-          {/* ===================================================== */}
-          {/* HEADER */}
-          {/* ===================================================== */}
+          {/* =====================================================
+              HEADER
+             ===================================================== */}
 
-          <header className="mb-5">
+          <header className="mb-5 text-center">
+
+            {/* NAME */}
+
             {personalInfo.fullName?.trim() && (
               <h1 className="text-[29px] font-bold leading-[1.1] tracking-tight text-zinc-950">
                 {personalInfo.fullName.trim()}
               </h1>
             )}
+
+            {/* TITLE */}
 
             {personalInfo.title?.trim() && (
               <p className="mt-1 text-[14px] font-medium text-zinc-600">
@@ -148,11 +180,15 @@ export default function ResumePreview() {
               </p>
             )}
 
-            {/* Email / Phone / Location */}
+            {/* =================================================
+                EMAIL / PHONE / LOCATION
+               ================================================= */}
+
             {(personalInfo.email?.trim() ||
               personalInfo.phone?.trim() ||
               personalInfo.location?.trim()) && (
-              <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10.5px] leading-5 text-zinc-600">
+              <div className="mt-2.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[10.5px] leading-5 text-zinc-600">
+
                 {personalInfo.email?.trim() && (
                   <a
                     href={`mailto:${personalInfo.email.trim()}`}
@@ -165,7 +201,9 @@ export default function ResumePreview() {
                 {personalInfo.phone?.trim() && (
                   <>
                     {personalInfo.email?.trim() && (
-                      <span aria-hidden="true">•</span>
+                      <span aria-hidden="true">
+                        •
+                      </span>
                     )}
 
                     <a
@@ -181,7 +219,9 @@ export default function ResumePreview() {
                   <>
                     {(personalInfo.email?.trim() ||
                       personalInfo.phone?.trim()) && (
-                      <span aria-hidden="true">•</span>
+                      <span aria-hidden="true">
+                        •
+                      </span>
                     )}
 
                     <span>
@@ -192,35 +232,45 @@ export default function ResumePreview() {
               </div>
             )}
 
-            {/* LinkedIn / GitHub / Portfolio */}
+            {/* =================================================
+                LINKEDIN / GITHUB / PORTFOLIO
+               ================================================= */}
+
             {(personalInfo.linkedin?.trim() ||
               personalInfo.github?.trim() ||
               personalInfo.portfolio?.trim()) && (
-              <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10.5px] leading-5 text-zinc-600">
+              <div className="mt-0.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[10.5px] leading-5 text-zinc-600">
+
                 {personalInfo.linkedin?.trim() && (
                   <a
-                    href={normalizeUrl(personalInfo.linkedin)}
+                    href={normalizeUrl(
+                      personalInfo.linkedin
+                    )}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="resume-link hover:underline"
                   >
-                    LinkedIn: {personalInfo.linkedin.trim()}
+                    LinkedIn
                   </a>
                 )}
 
                 {personalInfo.github?.trim() && (
                   <>
                     {personalInfo.linkedin?.trim() && (
-                      <span aria-hidden="true">•</span>
+                      <span aria-hidden="true">
+                        •
+                      </span>
                     )}
 
                     <a
-                      href={normalizeUrl(personalInfo.github)}
+                      href={normalizeUrl(
+                        personalInfo.github
+                      )}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="resume-link hover:underline"
                     >
-                      GitHub: {personalInfo.github.trim()}
+                      GitHub
                     </a>
                   </>
                 )}
@@ -229,16 +279,20 @@ export default function ResumePreview() {
                   <>
                     {(personalInfo.linkedin?.trim() ||
                       personalInfo.github?.trim()) && (
-                      <span aria-hidden="true">•</span>
+                      <span aria-hidden="true">
+                        •
+                      </span>
                     )}
 
                     <a
-                      href={normalizeUrl(personalInfo.portfolio)}
+                      href={normalizeUrl(
+                        personalInfo.portfolio
+                      )}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="resume-link hover:underline"
                     >
-                      Portfolio: {personalInfo.portfolio.trim()}
+                      Portfolio
                     </a>
                   </>
                 )}
@@ -246,13 +300,15 @@ export default function ResumePreview() {
             )}
           </header>
 
-          {/* ===================================================== */}
-          {/* SUMMARY */}
-          {/* ===================================================== */}
+          {/* =====================================================
+              SUMMARY
+             ===================================================== */}
 
           {data.summary?.trim() && (
             <section className="mb-4">
-              <SectionTitle>Summary</SectionTitle>
+              <SectionTitle>
+                Summary
+              </SectionTitle>
 
               <p className="text-[11px] leading-[1.5] text-zinc-700">
                 {data.summary.trim()}
@@ -260,253 +316,308 @@ export default function ResumePreview() {
             </section>
           )}
 
-          {/* ===================================================== */}
-          {/* SKILLS */}
-          {/* ===================================================== */}
+          {/* =====================================================
+              SKILLS
+             ===================================================== */}
 
-          {validSkills.length > 0 && (
+          {groupedSkills.length > 0 && (
             <section className="mb-4">
-              <SectionTitle>Skills</SectionTitle>
+              <SectionTitle>
+                Skills
+              </SectionTitle>
 
-              <p className="text-[11px] leading-[1.5] text-zinc-700">
-                {validSkills.join(" • ")}
-              </p>
+              <div className="space-y-1">
+                {groupedSkills.map((group) => (
+                  <div
+                    key={group.category}
+                    className="grid grid-cols-[105px_minmax(0,1fr)] items-start gap-x-3"
+                  >
+                    <span className="pt-[1px] text-[9.5px] font-bold uppercase tracking-[0.06em] text-zinc-600">
+                      {group.label}
+                    </span>
+
+                    <p className="text-[10.5px] leading-[1.5] text-zinc-700">
+                      {group.skills.join(" • ")}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </section>
           )}
 
-          {/* ===================================================== */}
-          {/* EXPERIENCE */}
-          {/* ===================================================== */}
+          {/* =====================================================
+              EXPERIENCE
+             ===================================================== */}
 
           {validExperience.length > 0 && (
             <section className="mb-4">
-              <SectionTitle>Experience</SectionTitle>
+              <SectionTitle>
+                Experience
+              </SectionTitle>
 
               <div className="space-y-3">
-                {validExperience.map((experience, index) => {
-                  const dateParts = [
-                    experience.startDate,
-                    experience.current
-                      ? "Present"
-                      : experience.endDate,
-                  ].filter(Boolean);
+                {validExperience.map(
+                  (experience, index) => {
+                    const dateParts = [
+                      experience.startDate,
+                      experience.current
+                        ? "Present"
+                        : experience.endDate,
+                    ].filter(Boolean);
 
-                  const dateRange = dateParts.join(" - ");
+                    const dateRange =
+                      dateParts.join(" - ");
 
-                  const descriptions =
-                    experience.description?.filter(
-                      (point) => point?.trim()
-                    ) || [];
+                    const descriptions =
+                      experience.description?.filter(
+                        (point) => point?.trim()
+                      ) || [];
 
-                  return (
-                    <article
-                      key={`${experience.company}-${experience.role}-${index}`}
-                      className="break-inside-avoid"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          {experience.role?.trim() && (
-                            <h3 className="text-[12px] font-bold text-zinc-900">
-                              {experience.role.trim()}
-                            </h3>
-                          )}
+                    return (
+                      <article
+                        key={`${experience.company}-${experience.role}-${index}`}
+                        className="break-inside-avoid"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0">
+                            {experience.role?.trim() && (
+                              <h3 className="text-[12px] font-bold text-zinc-900">
+                                {experience.role.trim()}
+                              </h3>
+                            )}
 
-                          {experience.company?.trim() && (
-                            <p className="mt-0.5 text-[11px] font-medium text-zinc-600">
-                              {experience.company.trim()}
-                            </p>
+                            {experience.company?.trim() && (
+                              <p className="mt-0.5 text-[11px] font-medium text-zinc-600">
+                                {experience.company.trim()}
+                              </p>
+                            )}
+                          </div>
+
+                          {dateRange && (
+                            <span className="shrink-0 text-[10px] text-zinc-500">
+                              {dateRange}
+                            </span>
                           )}
                         </div>
 
-                        {dateRange && (
-                          <span className="shrink-0 text-[10px] text-zinc-500">
-                            {dateRange}
-                          </span>
+                        {descriptions.length > 0 && (
+                          <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[10.5px] leading-[1.45] text-zinc-700">
+                            {descriptions.map(
+                              (
+                                point,
+                                pointIndex
+                              ) => (
+                                <li
+                                  key={pointIndex}
+                                >
+                                  {point.trim()}
+                                </li>
+                              )
+                            )}
+                          </ul>
                         )}
-                      </div>
-
-                      {descriptions.length > 0 && (
-                        <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[10.5px] leading-[1.45] text-zinc-700">
-                          {descriptions.map(
-                            (point, pointIndex) => (
-                              <li key={pointIndex}>
-                                {point.trim()}
-                              </li>
-                            )
-                          )}
-                        </ul>
-                      )}
-                    </article>
-                  );
-                })}
+                      </article>
+                    );
+                  }
+                )}
               </div>
             </section>
           )}
 
-          {/* ===================================================== */}
-          {/* PROJECTS */}
-          {/* ===================================================== */}
+          {/* =====================================================
+              PROJECTS
+             ===================================================== */}
 
           {validProjects.length > 0 && (
             <section className="mb-4">
-              <SectionTitle>Projects</SectionTitle>
+              <SectionTitle>
+                Projects
+              </SectionTitle>
 
               <div className="space-y-3">
-                {validProjects.map((project, index) => {
-                  const projectUrl = project.url?.trim()
-                    ? normalizeUrl(project.url)
-                    : "";
+                {validProjects.map(
+                  (project, index) => {
+                    const projectUrl =
+                      project.url?.trim()
+                        ? normalizeUrl(
+                            project.url
+                          )
+                        : "";
 
-                  const techStack =
-                    project.techStack?.filter(
-                      (technology) => technology?.trim()
-                    ) || [];
+                    const techStack =
+                      project.techStack?.filter(
+                        (technology) =>
+                          technology?.trim()
+                      ) || [];
 
-                  const descriptions =
-                    project.description?.filter(
-                      (point) => point?.trim()
-                    ) || [];
+                    const descriptions =
+                      project.description?.filter(
+                        (point) =>
+                          point?.trim()
+                      ) || [];
 
-                  return (
-                    <article
-                      key={`${project.name}-${index}`}
-                      className="break-inside-avoid"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          {project.name?.trim() && (
-                            <h3 className="text-[12px] font-bold text-zinc-900">
-                              {projectUrl ? (
-                                <a
-                                  href={projectUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="resume-link hover:underline"
-                                >
-                                  {project.name.trim()}
-                                </a>
-                              ) : (
-                                project.name.trim()
-                              )}
-                            </h3>
-                          )}
+                    return (
+                      <article
+                        key={`${project.name}-${index}`}
+                        className="break-inside-avoid"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0">
+                            {project.name?.trim() && (
+                              <h3 className="text-[12px] font-bold text-zinc-900">
+                                {projectUrl ? (
+                                  <a
+                                    href={
+                                      projectUrl
+                                    }
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="resume-link hover:underline"
+                                  >
+                                    {project.name.trim()}
+                                  </a>
+                                ) : (
+                                  project.name.trim()
+                                )}
+                              </h3>
+                            )}
 
-                          {techStack.length > 0 && (
-                            <p className="mt-0.5 text-[10px] font-medium text-zinc-500">
-                              {techStack.join(" • ")}
-                            </p>
+                            {techStack.length > 0 && (
+                              <p className="mt-0.5 text-[10px] font-medium text-zinc-500">
+                                {techStack.join(" • ")}
+                              </p>
+                            )}
+                          </div>
+
+                          {projectUrl && (
+                            <a
+                              href={projectUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="resume-link shrink-0 text-[10px] text-zinc-500 hover:underline"
+                            >
+                              View Project
+                            </a>
                           )}
                         </div>
 
-                        {projectUrl && (
-                          <a
-                            href={projectUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="resume-link shrink-0 text-[10px] text-zinc-500 hover:underline"
-                          >
-                            View Project
-                          </a>
+                        {descriptions.length > 0 && (
+                          <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[10.5px] leading-[1.45] text-zinc-700">
+                            {descriptions.map(
+                              (
+                                point,
+                                pointIndex
+                              ) => (
+                                <li
+                                  key={pointIndex}
+                                >
+                                  {point.trim()}
+                                </li>
+                              )
+                            )}
+                          </ul>
                         )}
-                      </div>
-
-                      {descriptions.length > 0 && (
-                        <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[10.5px] leading-[1.45] text-zinc-700">
-                          {descriptions.map(
-                            (point, pointIndex) => (
-                              <li key={pointIndex}>
-                                {point.trim()}
-                              </li>
-                            )
-                          )}
-                        </ul>
-                      )}
-                    </article>
-                  );
-                })}
+                      </article>
+                    );
+                  }
+                )}
               </div>
             </section>
           )}
 
-          {/* ===================================================== */}
-          {/* EDUCATION */}
-          {/* ===================================================== */}
+          {/* =====================================================
+              EDUCATION
+             ===================================================== */}
 
           {validEducation.length > 0 && (
             <section className="mb-4">
-              <SectionTitle>Education</SectionTitle>
+              <SectionTitle>
+                Education
+              </SectionTitle>
 
               <div className="space-y-2.5">
-                {validEducation.map((education, index) => {
-                  const degree =
-                    education.degree?.trim() || "";
+                {validEducation.map(
+                  (education, index) => {
+                    const degree =
+                      education.degree?.trim() ||
+                      "";
 
-                  const field = education.field?.trim()
-                    ? `, ${education.field.trim()}`
-                    : "";
+                    const field =
+                      education.field?.trim()
+                        ? `, ${education.field.trim()}`
+                        : "";
 
-                  const dateParts = [
-                    education.startYear,
-                    education.endYear,
-                  ].filter(Boolean);
+                    const dateParts = [
+                      education.startYear,
+                      education.endYear,
+                    ].filter(Boolean);
 
-                  const dateRange =
-                    dateParts.join(" - ");
+                    const dateRange =
+                      dateParts.join(" - ");
 
-                  return (
-                    <article
-                      key={`${education.institution}-${education.degree}-${index}`}
-                      className="break-inside-avoid"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          {(degree || field) && (
-                            <h3 className="text-[11.5px] font-bold text-zinc-900">
-                              {degree}
-                              {field}
-                            </h3>
-                          )}
+                    return (
+                      <article
+                        key={`${education.institution}-${education.degree}-${index}`}
+                        className="break-inside-avoid"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            {(degree || field) && (
+                              <h3 className="text-[11.5px] font-bold text-zinc-900">
+                                {degree}
+                                {field}
+                              </h3>
+                            )}
 
-                          {education.institution?.trim() && (
-                            <p className="mt-0.5 text-[10.5px] text-zinc-600">
-                              {education.institution.trim()}
-                            </p>
-                          )}
+                            {education.institution?.trim() && (
+                              <p className="mt-0.5 text-[10.5px] text-zinc-600">
+                                {education.institution.trim()}
+                              </p>
+                            )}
 
-                          {education.cgpa?.trim() && (
-                            <p className="mt-0.5 text-[10px] text-zinc-500">
-                              CGPA: {education.cgpa.trim()}
-                            </p>
+                            {education.cgpa?.trim() && (
+                              <p className="mt-0.5 text-[10px] text-zinc-500">
+                                CGPA:{" "}
+                                {education.cgpa.trim()}
+                              </p>
+                            )}
+                          </div>
+
+                          {dateRange && (
+                            <span className="shrink-0 text-[10px] text-zinc-500">
+                              {dateRange}
+                            </span>
                           )}
                         </div>
-
-                        {dateRange && (
-                          <span className="shrink-0 text-[10px] text-zinc-500">
-                            {dateRange}
-                          </span>
-                        )}
-                      </div>
-                    </article>
-                  );
-                })}
+                      </article>
+                    );
+                  }
+                )}
               </div>
             </section>
           )}
 
-          {/* ===================================================== */}
-          {/* CERTIFICATIONS */}
-          {/* ===================================================== */}
+          {/* =====================================================
+              CERTIFICATIONS
+             ===================================================== */}
 
           {validCertifications.length > 0 && (
             <section className="mb-4">
-              <SectionTitle>Certifications</SectionTitle>
+              <SectionTitle>
+                Certifications
+              </SectionTitle>
 
               <div className="space-y-2">
                 {validCertifications.map(
-                  (certification, index) => {
+                  (
+                    certification,
+                    index
+                  ) => {
                     const certificationUrl =
                       certification.url?.trim()
-                        ? normalizeUrl(certification.url)
+                        ? normalizeUrl(
+                            certification.url
+                          )
                         : "";
 
                     return (
@@ -520,7 +631,9 @@ export default function ResumePreview() {
                               <h3 className="text-[11px] font-semibold text-zinc-900">
                                 {certificationUrl ? (
                                   <a
-                                    href={certificationUrl}
+                                    href={
+                                      certificationUrl
+                                    }
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="resume-link hover:underline"
@@ -541,7 +654,8 @@ export default function ResumePreview() {
                                   certification.issueDate,
                                 ]
                                   .filter(
-                                    (value) => value?.trim()
+                                    (value) =>
+                                      value?.trim()
                                   )
                                   .join(" • ")}
                               </p>
@@ -550,7 +664,9 @@ export default function ResumePreview() {
 
                           {certificationUrl && (
                             <a
-                              href={certificationUrl}
+                              href={
+                                certificationUrl
+                              }
                               target="_blank"
                               rel="noopener noreferrer"
                               className="resume-link shrink-0 text-[10px] text-zinc-500 hover:underline"
