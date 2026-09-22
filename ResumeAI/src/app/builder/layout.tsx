@@ -1,6 +1,6 @@
 import { BuilderHeader } from "@/components/builder/Header";
 import { BuilderSidebar } from "@/components/builder/Sidebar";
-import { ResumePreview } from "@/components/preview/ResumePreview";
+import  ResumePreview  from "@/components/preview/ResumePreview";
 
 export default function BuilderLayout({
   children,

@@ -23,10 +23,10 @@ export interface Project {
   id: string;
   name: string;
   url: string;
+  githubUrl: string;
   techStack: string[];
   description: string[];
 }
-
 export interface Education {
   id: string;
   institution: string;

@@ -5,7 +5,7 @@ import { PersonalInfoForm } from "@/components/builder/forms/PersonalInfoForm";
 import { SummaryForm } from "@/components/builder/forms/SummaryForm";
 import { SkillsForm } from "@/components/builder/forms/SkillsForm";
 import { ExperienceForm } from "@/components/builder/forms/ExperienceForm";
-import { ProjectsForm } from "@/components/builder/forms/ProjectsForm";
+import  ProjectsForm  from "@/components/builder/forms/ProjectsForm";
 import { EducationForm } from "@/components/builder/forms/EducationForm";
 import { CertificationsForm } from "@/components/builder/forms/CertificationsForm";
 import { ATSAnalysis } from "@/components/builder/forms/ATSAnalysis";

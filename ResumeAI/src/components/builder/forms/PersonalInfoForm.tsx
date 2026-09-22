@@ -1,128 +1,196 @@
 "use client";
 
 import { useResumeStore } from "@/lib/store/useResumeStore";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 export function PersonalInfoForm() {
   const { data, updatePersonalInfo } = useResumeStore();
   const { personalInfo } = data;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Personal Information
-        </h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Let's start with your basic details. This will be the header of your resume.
-        </p>
+    <div className="space-y-5">
+      {/* Professional Title */}
+      <div className="space-y-2">
+        <label
+          htmlFor="title"
+          className="text-sm font-medium text-zinc-900 dark:text-zinc-100"
+        >
+          Professional Title
+        </label>
+
+        <input
+          id="title"
+          type="text"
+          value={personalInfo.title || ""}
+          onChange={(e) =>
+            updatePersonalInfo({
+              title: e.target.value,
+            })
+          }
+          placeholder="Full Stack Developer"
+          className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+        />
       </div>
 
-      <Card>
-        <CardContent className="p-6 grid gap-6">
-          <div className="grid gap-2">
-            <Label htmlFor="title">Professional Title</Label>
-            <Input
-              id="title"
-              placeholder="e.g. Senior Software Engineer"
-              value={personalInfo.title}
-              onChange={(e) => updatePersonalInfo({ title: e.target.value })}
-              className="bg-zinc-50 dark:bg-zinc-900/50"
-            />
-          </div>
+      {/* Full Name */}
+      <div className="space-y-2">
+        <label
+          htmlFor="fullName"
+          className="text-sm font-medium text-zinc-900 dark:text-zinc-100"
+        >
+          Full Name
+        </label>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="grid gap-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                placeholder="Jane Doe"
-                value={personalInfo.fullName}
-                onChange={(e) => updatePersonalInfo({ fullName: e.target.value })}
-                className="bg-zinc-50 dark:bg-zinc-900/50"
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="jane@example.com"
-                value={personalInfo.email}
-                onChange={(e) => updatePersonalInfo({ email: e.target.value })}
-                className="bg-zinc-50 dark:bg-zinc-900/50"
-              />
-            </div>
+        <input
+          id="fullName"
+          type="text"
+          value={personalInfo.fullName || ""}
+          onChange={(e) =>
+            updatePersonalInfo({
+              fullName: e.target.value,
+            })
+          }
+          placeholder="John Doe"
+          className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+        />
+      </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="+1 (555) 000-0000"
-                value={personalInfo.phone}
-                onChange={(e) => updatePersonalInfo({ phone: e.target.value })}
-                className="bg-zinc-50 dark:bg-zinc-900/50"
-              />
-            </div>
+      {/* Email */}
+      <div className="space-y-2">
+        <label
+          htmlFor="email"
+          className="text-sm font-medium text-zinc-900 dark:text-zinc-100"
+        >
+          Email
+        </label>
 
-            <div className="grid gap-2">
-              <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                placeholder="San Francisco, CA"
-                value={personalInfo.location}
-                onChange={(e) => updatePersonalInfo({ location: e.target.value })}
-                className="bg-zinc-50 dark:bg-zinc-900/50"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        <input
+          id="email"
+          type="email"
+          value={personalInfo.email || ""}
+          onChange={(e) =>
+            updatePersonalInfo({
+              email: e.target.value,
+            })
+          }
+          placeholder="john@example.com"
+          className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+        />
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Links</CardTitle>
-          <CardDescription>Add your professional profiles</CardDescription>
-        </CardHeader>
-        <CardContent className="p-6 pt-0 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="grid gap-2">
-            <Label htmlFor="linkedin">LinkedIn URL</Label>
-            <Input
-              id="linkedin"
-              placeholder="linkedin.com/in/janedoe"
-              value={personalInfo.linkedin}
-              onChange={(e) => updatePersonalInfo({ linkedin: e.target.value })}
-              className="bg-zinc-50 dark:bg-zinc-900/50"
-            />
-          </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="github">GitHub URL</Label>
-            <Input
-              id="github"
-              placeholder="github.com/janedoe"
-              value={personalInfo.github}
-              onChange={(e) => updatePersonalInfo({ github: e.target.value })}
-              className="bg-zinc-50 dark:bg-zinc-900/50"
-            />
-          </div>
+      {/* Phone */}
+      <div className="space-y-2">
+        <label
+          htmlFor="phone"
+          className="text-sm font-medium text-zinc-900 dark:text-zinc-100"
+        >
+          Phone
+        </label>
 
-          <div className="grid gap-2 md:col-span-2">
-            <Label htmlFor="portfolio">Portfolio / Website</Label>
-            <Input
-              id="portfolio"
-              placeholder="janedoe.com"
-              value={personalInfo.portfolio}
-              onChange={(e) => updatePersonalInfo({ portfolio: e.target.value })}
-              className="bg-zinc-50 dark:bg-zinc-900/50"
-            />
-          </div>
-        </CardContent>
-      </Card>
+        <input
+          id="phone"
+          type="tel"
+          value={personalInfo.phone || ""}
+          onChange={(e) =>
+            updatePersonalInfo({
+              phone: e.target.value,
+            })
+          }
+          placeholder="+91 9876543210"
+          className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+        />
+      </div>
+
+      {/* Location */}
+      <div className="space-y-2">
+        <label
+          htmlFor="location"
+          className="text-sm font-medium text-zinc-900 dark:text-zinc-100"
+        >
+          Location
+        </label>
+
+        <input
+          id="location"
+          type="text"
+          value={personalInfo.location || ""}
+          onChange={(e) =>
+            updatePersonalInfo({
+              location: e.target.value,
+            })
+          }
+          placeholder="Assam, India"
+          className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+        />
+      </div>
+
+      {/* LinkedIn */}
+      <div className="space-y-2">
+        <label
+          htmlFor="linkedin"
+          className="text-sm font-medium text-zinc-900 dark:text-zinc-100"
+        >
+          LinkedIn URL
+        </label>
+
+        <input
+          id="linkedin"
+          type="url"
+          value={personalInfo.linkedin || ""}
+          onChange={(e) =>
+            updatePersonalInfo({
+              linkedin: e.target.value,
+            })
+          }
+          placeholder="linkedin.com/in/janedoe"
+          className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+        />
+      </div>
+
+      {/* GitHub */}
+      <div className="space-y-2">
+        <label
+          htmlFor="github"
+          className="text-sm font-medium text-zinc-900 dark:text-zinc-100"
+        >
+          GitHub URL
+        </label>
+
+        <input
+          id="github"
+          type="url"
+          value={personalInfo.github || ""}
+          onChange={(e) =>
+            updatePersonalInfo({
+              github: e.target.value,
+            })
+          }
+          placeholder="github.com/janedoe"
+          className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+        />
+      </div>
+
+      {/* Portfolio */}
+      <div className="space-y-2">
+        <label
+          htmlFor="portfolio"
+          className="text-sm font-medium text-zinc-900 dark:text-zinc-100"
+        >
+          Portfolio / Website
+        </label>
+
+        <input
+          id="portfolio"
+          type="url"
+          value={personalInfo.portfolio || ""}
+          onChange={(e) =>
+            updatePersonalInfo({
+              portfolio: e.target.value,
+            })
+          }
+          placeholder="janedoe.com"
+          className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+        />
+      </div>
     </div>
   );
 }
